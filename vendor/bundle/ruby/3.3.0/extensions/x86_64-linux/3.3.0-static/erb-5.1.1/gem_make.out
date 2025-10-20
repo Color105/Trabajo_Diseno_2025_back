@@ -1,0 +1,19 @@
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/erb-5.1.1/ext/erb/escape
+/home/colo105/.rubies/ruby-3.3.1/bin/ruby extconf.rb
+checking for rb_ext_ractor_safe() in ruby.h... yes
+creating Makefile
+
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/erb-5.1.1/ext/erb/escape
+make DESTDIR\= sitearchdir\=./.gem.20251017-12476-hjfqoe sitelibdir\=./.gem.20251017-12476-hjfqoe clean
+
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/erb-5.1.1/ext/erb/escape
+make DESTDIR\= sitearchdir\=./.gem.20251017-12476-hjfqoe sitelibdir\=./.gem.20251017-12476-hjfqoe
+compiling escape.c
+linking shared-object erb/escape.so
+
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/erb-5.1.1/ext/erb/escape
+make DESTDIR\= sitearchdir\=./.gem.20251017-12476-hjfqoe sitelibdir\=./.gem.20251017-12476-hjfqoe install
+/usr/bin/install -c -m 0755 escape.so ./.gem.20251017-12476-hjfqoe/erb
+
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/erb-5.1.1/ext/erb/escape
+make DESTDIR\= sitearchdir\=./.gem.20251017-12476-hjfqoe sitelibdir\=./.gem.20251017-12476-hjfqoe clean

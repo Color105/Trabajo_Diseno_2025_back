@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  estado_anterior: MyString
+  estado_nuevo: MyString
+  fecha_cambio: 2025-10-17 10:29:40
+  tramite: one
+
+two:
+  estado_anterior: MyString
+  estado_nuevo: MyString
+  fecha_cambio: 2025-10-17 10:29:40
+  tramite: two

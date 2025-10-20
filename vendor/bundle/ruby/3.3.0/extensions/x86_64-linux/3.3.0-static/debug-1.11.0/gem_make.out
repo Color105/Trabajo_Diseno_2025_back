@@ -1,0 +1,19 @@
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/debug-1.11.0/ext/debug
+/home/colo105/.rubies/ruby-3.3.1/bin/ruby extconf.rb
+creating Makefile
+
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/debug-1.11.0/ext/debug
+make DESTDIR\= sitearchdir\=./.gem.20251017-12476-c9pprq sitelibdir\=./.gem.20251017-12476-c9pprq clean
+
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/debug-1.11.0/ext/debug
+make DESTDIR\= sitearchdir\=./.gem.20251017-12476-c9pprq sitelibdir\=./.gem.20251017-12476-c9pprq
+compiling debug.c
+compiling iseq_collector.c
+linking shared-object debug/debug.so
+
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/debug-1.11.0/ext/debug
+make DESTDIR\= sitearchdir\=./.gem.20251017-12476-c9pprq sitelibdir\=./.gem.20251017-12476-c9pprq install
+/usr/bin/install -c -m 0755 debug.so ./.gem.20251017-12476-c9pprq/debug
+
+current directory: /home/colo105/proyecto_diseno_api/vendor/bundle/ruby/3.3.0/gems/debug-1.11.0/ext/debug
+make DESTDIR\= sitearchdir\=./.gem.20251017-12476-c9pprq sitelibdir\=./.gem.20251017-12476-c9pprq clean
