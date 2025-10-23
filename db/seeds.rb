@@ -4,13 +4,15 @@
 # 1. Limpieza de Datos
 # ------------------------------------
 puts "Limpiando base de datos..."
-# Limpia las tablas en orden de dependencia inversa
-Tramite.destroy_all
+# ⚠️ CORRECCIÓN: Borrar en orden de dependencia inversa (hijos primero)
+HistoricoEstado.destroy_all  # <-- Depende de Tramite y EstadoTramite
 # AgendaConsultor.destroy_all # Descomentar si tienes esta tabla
-# HistoricoEstado.destroy_all # Descomentar si tienes esta tabla
+Tramite.destroy_all          # <-- Depende de Consultor, TipoTramite, etc.
 
+# Ahora borramos los "padres"
 Consultor.destroy_all
 TipoTramite.destroy_all
+EstadoTramite.destroy_all    # <-- ¡Agregado!
 puts "Base de datos limpia."
 
 # ------------------------------------
@@ -24,8 +26,7 @@ CONSULTORES_DATA = [
   { nombre: "Carlos López",    email: "carlos.lopez@example.com" },
   { nombre: "Santiago Ruiz",   email: "santiago.ruiz@example.com" }
 ]
-# Creamos los consultores
-CONSULTORES_DATA.map { |c| Consultor.create!(c) } # No guardamos en variable local
+CONSULTORES_DATA.map { |c| Consultor.find_or_create_by!(c) }
 puts "✅ #{Consultor.count} Consultores creados."
 
 # ------------------------------------
@@ -38,54 +39,73 @@ TIPOS_DATA = [
   { nombre: "Revalidación Título", plazo_documentacion: 45 },
   { nombre: "Permiso de Conducir", plazo_documentacion: 15 }
 ]
-# Creamos los tipos de trámite
-TIPOS_DATA.map { |t| TipoTramite.create!(t) } # No guardamos en variable local
+TIPOS_DATA.map { |t| TipoTramite.find_or_create_by!(t) }
 puts "✅ #{TipoTramite.count} Tipos de Trámite creados."
 
 # ------------------------------------
-# 4. Trámites de Ejemplo (CORRECCIÓN DE ASIGNACIÓN)
+# 4. Estados de Trámite (NUEVA SECCIÓN)
+# ------------------------------------
+puts "Creando Estados de Trámite..."
+ESTADOS_DATA = [
+  { codEstadoTramite: "ING", nombreEstadoTramite: "Ingresado" },
+  { codEstadoTramite: "ASIG", nombreEstadoTramite: "Asignado" },
+  { codEstadoTramite: "PROC", nombreEstadoTramite: "En Proceso" },
+  { codEstadoTramite: "SUSP", nombreEstadoTramite: "Suspendido" },
+  { codEstadoTramite: "TERM", nombreEstadoTramite: "Terminado" },
+  { codEstadoTramite: "CANC", nombreEstadoTramite: "Cancelado" },
+]
+# Usamos find_or_create_by! para no duplicar si ya existen
+ESTADOS_DATA.each { |e| EstadoTramite.find_or_create_by!(e) }
+puts "✅ #{EstadoTramite.count} Estados de Trámite creados/verificados."
+
+
+# ------------------------------------
+# 5. Trámites de Ejemplo (Antes sección 4)
 # ------------------------------------
 puts "Creando Trámites de Ejemplo (LISTO)..."
 
-# ⚠️ CORRECCIÓN CLAVE: Recargamos los objetos desde la BD para asegurar que existan.
+# Recargamos los objetos desde la BD para asegurar que existan.
 consultores = Consultor.all.to_a
 tipos = TipoTramite.all.to_a
+estados_map = EstadoTramite.all.index_by(&:nombreEstadoTramite)
 
-# Asignaciones (Ahora seguras)
+# Asignaciones
 juan, maria, lucia, carlos, santiago = consultores
 visa, residencia, revalidacion, permiso = tipos
 
 # Helper para generar códigos
 gen_codigo = ->(seq) { "TR-%04d" % seq }
 
+# --- ⚠️ CORRECCIÓN CLAVE AQUÍ ---
+# Los 'estado:' deben coincidir con la lista VALID_STATES de tu modelo.
 TRAMITES_DATA = [
   { 
-    codigo: gen_codigo[1], estado: "ingresado",
+    codigo: gen_codigo[1], estado: "ingresado", # <-- CORREGIDO
     fecha_inicio: 2.days.ago, monto: 1000, 
     consultor: juan, tipo_tramite: visa 
   },
   { 
-    codigo: gen_codigo[2], estado: "asignado",
+    codigo: gen_codigo[2], estado: "asignado", # <-- CORREGIDO
     fecha_inicio: 1.day.ago, monto: 1500, 
     consultor: maria, tipo_tramite: residencia 
   },
   { 
-    codigo: gen_codigo[3], estado: "en_proceso",
+    codigo: gen_codigo[3], estado: "en_proceso", # <-- CORREGIDO
     fecha_inicio: 3.days.ago, monto: 2500, 
     consultor: lucia, tipo_tramite: visa 
   },
   { 
-    codigo: gen_codigo[4], estado: "suspendido",
+    codigo: gen_codigo[4], estado: "suspendido", # <-- CORREGIDO
     fecha_inicio: 5.days.ago, monto: 800, 
     consultor: juan, tipo_tramite: revalidacion 
   },
   { 
-    codigo: gen_codigo[5], estado: "terminado",
+    codigo: gen_codigo[5], estado: "terminado", # <-- CORREGIDO
     fecha_inicio: 7.days.ago, monto: 1200, 
     consultor: maria, tipo_tramite: permiso 
   },
   { 
-    codigo: gen_codigo[6], estado: "cancelado",
+    codigo: gen_codigo[6], estado: "cancelado", # <-- CORREGIDO
     fecha_inicio: 9.days.ago, monto: 600, 
     consultor: carlos, tipo_tramite: residencia 
   }
@@ -93,7 +113,6 @@ TRAMITES_DATA = [
 
 # Usamos create! directamente para crear el registro
 TRAMITES_DATA.each_with_index do |attrs, index|
-  # Este bloque convierte los objetos 'consultor' y 'tipo_tramite' en los IDs
   data_for_creation = attrs.except(:consultor, :tipo_tramite).merge(
     consultor_id: attrs[:consultor].id,
     tipo_tramite_id: attrs[:tipo_tramite].id

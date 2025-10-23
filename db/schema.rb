@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_17_133009) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_23_001440) do
   create_table "agenda_consultors", force: :cascade do |t|
     t.datetime "fecha_hora"
     t.integer "consultor_id", null: false
@@ -26,6 +26,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_17_133009) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "estado_tramites", force: :cascade do |t|
+    t.string "codEstadoTramite", null: false
+    t.string "nombreEstadoTramite", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["codEstadoTramite"], name: "index_estado_tramites_on_codEstadoTramite", unique: true
+    t.index ["nombreEstadoTramite"], name: "index_estado_tramites_on_nombreEstadoTramite", unique: true
+  end
+
   create_table "historico_estados", force: :cascade do |t|
     t.string "estado_anterior"
     t.string "estado_nuevo"
@@ -33,6 +42,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_17_133009) do
     t.integer "tramite_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "estado_tramite_id", null: false
+    t.index ["estado_tramite_id"], name: "index_historico_estados_on_estado_tramite_id"
     t.index ["tramite_id"], name: "index_historico_estados_on_tramite_id"
   end
 
@@ -57,6 +68,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_17_133009) do
   end
 
   add_foreign_key "agenda_consultors", "consultors"
+  add_foreign_key "historico_estados", "estado_tramites"
   add_foreign_key "historico_estados", "tramites"
   add_foreign_key "tramites", "consultors"
   add_foreign_key "tramites", "tipo_tramites"

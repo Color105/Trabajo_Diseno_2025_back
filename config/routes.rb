@@ -5,16 +5,20 @@ Rails.application.routes.draw do
 
     # Recurso principal: Tramites
     resources :tramites do
+      # Acción custom para transición de estado + opcional monto
       patch :update_estado, on: :member
-      resources :historico_estados, only: :index   # /tramites/:tramite_id/historico_estados
+
+      # Histórico anidado por trámite: /tramites/:tramite_id/historico_estados
+      resources :historico_estados, only: :index
     end
 
-    # Auditoría global (opcional)
-    resources :historico_estados, only: :index     # /historico_estados
+    # Auditoría global (opcional): /historico_estados
+    resources :historico_estados, only: :index
 
     # ABMs de soporte
-    resources :consultors          # full CRUD: index show create update destroy
-    resources :tipo_tramites       # full CRUD: index show create update destroy
+    resources :consultors          # full CRUD
+    resources :tipo_tramites       # full CRUD
+    resources :estado_tramites     # full CRUD
 
     # Agenda consultores (como lo tenías)
     resources :agenda_consultors, only: [:index, :show, :create]
