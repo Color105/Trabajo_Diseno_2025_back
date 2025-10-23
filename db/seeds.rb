@@ -16,6 +16,30 @@ EstadoTramite.destroy_all    # <-- ¡Agregado!
 puts "Base de datos limpia."
 
 # ------------------------------------
+# 1.b Usuarios (para login JWT)
+# ------------------------------------
+puts "Creando usuarios (admin / recepcionista)..."
+
+User.destroy_all
+
+User.find_or_create_by!(email: "admin@demo.com") do |u|
+  u.name = "Admin"
+  u.role = :admin
+  u.password = "admin123"
+  u.password_confirmation = "admin123"
+end
+
+User.find_or_create_by!(email: "recep@demo.com") do |u|
+  u.name = "Recepcion"
+  u.role = :recepcionista
+  u.password = "recep123"
+  u.password_confirmation = "recep123"
+end
+
+puts "✅ #{User.count} usuarios creados."
+
+
+# ------------------------------------
 # 2. Consultores (Carga Máxima Eliminada)
 # ------------------------------------
 puts "Creando Consultores..."
