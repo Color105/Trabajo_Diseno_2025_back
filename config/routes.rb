@@ -23,6 +23,9 @@ Rails.application.routes.draw do
     resources :consultors          # full CRUD
     resources :tipo_tramites       # full CRUD
     resources :estado_tramites     # full CRUD
+    
+    # --- ¡¡AQUÍ ESTÁ LA LÍNEA QUE FALTA!! ---
+    resources :clientes            # full CRUD
 
     # ---------- Agenda consultores ----------
     resources :agenda_consultors, only: [:index, :show, :create]

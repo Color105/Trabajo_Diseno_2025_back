@@ -10,13 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_23_145150) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_23_210843) do
   create_table "agenda_consultors", force: :cascade do |t|
     t.datetime "fecha_hora"
     t.integer "consultor_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["consultor_id"], name: "index_agenda_consultors_on_consultor_id"
+  end
+
+  create_table "clientes", force: :cascade do |t|
+    t.string "nombre_apellido_cliente", null: false
+    t.string "mail_cliente", null: false
+    t.string "cuit_cliente", null: false
+    t.string "direccion_cliente"
+    t.string "telefono_cliente"
+    t.datetime "fecha_hora_alta_cliente"
+    t.datetime "fecha_hora_baja_cliente"
+    t.integer "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cuit_cliente"], name: "index_clientes_on_cuit_cliente", unique: true
+    t.index ["mail_cliente"], name: "index_clientes_on_mail_cliente", unique: true
+    t.index ["user_id"], name: "index_clientes_on_user_id", unique: true
   end
 
   create_table "consultors", force: :cascade do |t|
@@ -63,6 +79,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_145150) do
     t.integer "tipo_tramite_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "cliente_id", null: false
+    t.index ["cliente_id"], name: "index_tramites_on_cliente_id"
     t.index ["consultor_id"], name: "index_tramites_on_consultor_id"
     t.index ["tipo_tramite_id"], name: "index_tramites_on_tipo_tramite_id"
   end
@@ -78,8 +96,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_145150) do
   end
 
   add_foreign_key "agenda_consultors", "consultors"
+  add_foreign_key "clientes", "users"
   add_foreign_key "historico_estados", "estado_tramites"
   add_foreign_key "historico_estados", "tramites"
+  add_foreign_key "tramites", "clientes"
   add_foreign_key "tramites", "consultors"
   add_foreign_key "tramites", "tipo_tramites"
 end
