@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tipo_tramite: one
+  numero_version: 1
+  nombre_version: MyString
+  fecha_vigencia: 2025-10-27
+
+two:
+  tipo_tramite: two
+  numero_version: 1
+  nombre_version: MyString
+  fecha_vigencia: 2025-10-27

@@ -1,41 +1,68 @@
-# app/controllers/historico_estados_controller.rb
+class ConsultorsController < ApplicationController
+  # Llama a set_consultor antes de los métodos show, update y destroy
+  # Esto asegura que @consultor esté cargado o que se devuelva un 404 si no se encuentra.
+  before_action :set_consultor, only: [:show, :update, :destroy]
 
-class HistoricoEstadosController < ApplicationController
-  
-  # GET /historico_estados (global)
-  # GET /tramites/:tramite_id/historico_estados (específico)
+  # GET /consultors
+  # Lista todos los consultores.
   def index
-    if params[:tramite_id].present?
-      # --- CASO 2: BÚSQUEDA ESPECÍFICA ---
-      # Si la URL es /tramites/123/historico_estados
-      
-      find_tramite_and_render_historial
-      
+    @consultors = Consultor.all.order(:nombre)
+    render json: @consultors
+  end
+
+  # GET /consultors/:id
+  # Muestra un consultor específico.
+  def show
+    render json: @consultor
+  end
+
+  # POST /consultors
+  # Crea un nuevo consultor.
+  def create
+    @consultor = Consultor.new(consultor_params)
+
+    if @consultor.save
+      render json: @consultor, status: :created
     else
-      # --- CASO 1: HISTORIAL GLOBAL ---
-      # Si la URL es /historico_estados
-      
-      @historico_estados = HistoricoEstado.all.order(created_at: :desc)
-      render json: @historico_estados, include: :tramite 
+      # Devuelve un 422 con los errores de validación.
+      render json: { errors: @consultor.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+  
+  # PUT/PATCH /consultors/:id
+  # Actualiza un consultor existente.
+  def update
+    if @consultor.update(consultor_params)
+      render json: @consultor
+    else
+      # Devuelve un 422 con los errores de validación.
+      render json: { errors: @consultor.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # DELETE /consultors/:id
+  # Elimina un consultor.
+  def destroy
+    # Se ejecuta la eliminación. El modelo ya maneja las dependencias (:destroy o :nullify).
+    if @consultor.destroy
+      # Éxito: código HTTP 204 No Content (no hay cuerpo de respuesta)
+      head :no_content 
+    else
+      # Si falla la eliminación por alguna razón (ej. validación compleja antes de eliminar).
+      render json: { errors: ["No se pudo eliminar el consultor."] }, status: :unprocessable_entity
     end
   end
 
   private
-
-  # Esta función es la que te pasé antes
-  def find_tramite_and_render_historial
-    param = params[:tramite_id]
-    
-    # Busca por ID (número) o por Código (texto)
-    @tramite = Tramite.find_by(id: param) || Tramite.find_by(codigo: param)
-
-    if @tramite
-      # Encontramos el trámite, devolvemos su historial
-      @historial = @tramite.historico_estados.order(created_at: :desc)
-      render json: @historial
-    else
-      # No encontramos el trámite, devolvemos 404
-      render json: { error: "No se encontró el trámite con ID o Código: #{param}" }, status: :not_found
+    # Método para buscar el recurso por ID (usado por before_action).
+    def set_consultor
+      # Si el registro no se encuentra, Rails lanza ActiveRecord::RecordNotFound,
+      # que por defecto se maneja como un 404 Not Found.
+      @consultor = Consultor.find(params[:id])
     end
-  end
+    
+    # Parámetros fuertes (Strong Parameters)
+    def consultor_params
+      params.require(:consultor).permit(:nombre, :email)
+    end
 end

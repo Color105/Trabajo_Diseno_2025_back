@@ -1,70 +1,68 @@
-class TipoTramitesController < ApplicationController
-  # Utiliza 'before_action' para buscar el tipo de trámite por ID
-  # antes de ejecutar los métodos show, update y destroy.
-  before_action :set_tipo_tramite, only: [:show, :update, :destroy]
-  
-  # GET /tipo_tramites
-  # Lista todos los tipos de trámites.
+class ConsultorsController < ApplicationController
+  # Llama a set_consultor antes de los métodos show, update y destroy
+  # Esto asegura que @consultor esté cargado o que se devuelva un 404 si no se encuentra.
+  before_action :set_consultor, only: [:show, :update, :destroy]
+
+  # GET /consultors
+  # Lista todos los consultores.
   def index
-    @tipos_tramites = TipoTramite.all.order(:nombre)
-    render json: @tipos_tramites
+    @consultors = Consultor.all.order(:nombre)
+    render json: @consultors
   end
 
-  # GET /tipo_tramites/1
-  # Muestra un tipo de trámite específico.
+  # GET /consultors/:id
+  # Muestra un consultor específico.
   def show
-    render json: @tipo_tramite
+    render json: @consultor
   end
-  
-  # POST /tipo_tramites
-  # Crea un nuevo tipo de trámite.
+
+  # POST /consultors
+  # Crea un nuevo consultor.
   def create
-    @tipo_tramite = TipoTramite.new(tipo_tramite_params)
+    @consultor = Consultor.new(consultor_params)
 
-    if @tipo_tramite.save
-      render json: @tipo_tramite, status: :created
+    if @consultor.save
+      render json: @consultor, status: :created
     else
       # Devuelve un 422 con los errores de validación.
-      render json: { errors: @tipo_tramite.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: @consultor.errors.full_messages }, status: :unprocessable_entity
     end
   end
   
-  # PUT/PATCH /tipo_tramites/1
-  # Actualiza un tipo de trámite existente.
+  # PUT/PATCH /consultors/:id
+  # Actualiza un consultor existente.
   def update
-    if @tipo_tramite.update(tipo_tramite_params)
-      render json: @tipo_tramite
+    if @consultor.update(consultor_params)
+      render json: @consultor
     else
       # Devuelve un 422 con los errores de validación.
-      render json: { errors: @tipo_tramite.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: @consultor.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
-  # DELETE /tipo_tramites/1
-  # Elimina un tipo de trámite.
+  # DELETE /consultors/:id
+  # Elimina un consultor.
   def destroy
-    # El modelo TipoTramite ya tiene 'dependent: :destroy' configurado 
-    # para manejar la eliminación de trámites asociados.
-    if @tipo_tramite.destroy
-      # Éxito: código HTTP 204 No Content
+    # Se ejecuta la eliminación. El modelo ya maneja las dependencias (:destroy o :nullify).
+    if @consultor.destroy
+      # Éxito: código HTTP 204 No Content (no hay cuerpo de respuesta)
       head :no_content 
     else
-      # Si falla la eliminación por alguna razón.
-      render json: { errors: ["No se pudo eliminar el tipo de trámite."] }, status: :unprocessable_entity
+      # Si falla la eliminación por alguna razón (ej. validación compleja antes de eliminar).
+      render json: { errors: ["No se pudo eliminar el consultor."] }, status: :unprocessable_entity
     end
   end
 
   private
-    # Método para buscar el recurso por ID y manejar el error 404 automáticamente.
-    # Es invocado por el before_action.
-    def set_tipo_tramite
-      # Si el registro no se encuentra, Rails lanzará ActiveRecord::RecordNotFound,
+    # Método para buscar el recurso por ID (usado por before_action).
+    def set_consultor
+      # Si el registro no se encuentra, Rails lanza ActiveRecord::RecordNotFound,
       # que por defecto se maneja como un 404 Not Found.
-      @tipo_tramite = TipoTramite.find(params[:id])
+      @consultor = Consultor.find(params[:id])
     end
     
     # Parámetros fuertes (Strong Parameters)
-    def tipo_tramite_params
-      params.require(:tipo_tramite).permit(:nombre, :plazo_documentacion)
+    def consultor_params
+      params.require(:consultor).permit(:nombre, :email)
     end
-end
+ends

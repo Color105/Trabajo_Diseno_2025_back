@@ -1,118 +1,68 @@
-# app/controllers/tramites_controller.rb
-class TramitesController < ApplicationController
-  # Mantiene compatibilidad con payloads { tramite: { ... } } y directos
-  wrap_parameters :tramite, include: %i[codigo estado monto consultor_id tipo_tramite_id fecha_inicio], format: [:json] rescue nil
+class ConsultorsController < ApplicationController
+  # Llama a set_consultor antes de los métodos show, update y destroy
+  # Esto asegura que @consultor esté cargado o que se devuelva un 404 si no se encuentra.
+  before_action :set_consultor, only: [:show, :update, :destroy]
 
-  # ✅ Solo acciones que realmente existen
-  before_action :set_tramite, only: [:show, :update, :destroy, :update_estado]
-
-  #========================
-  # GET /tramites
-  #========================
+  # GET /consultors
+  # Lista todos los consultores.
   def index
-    tramites = Tramite
-      .includes(:consultor, :tipo_tramite)
-      .order(created_at: :desc)
-
-    render json: tramites.as_json(include: [:consultor, :tipo_tramite]), status: :ok
+    @consultors = Consultor.all.order(:nombre)
+    render json: @consultors
   end
 
-  #========================
-  # GET /tramites/:id
-  #========================
+  # GET /consultors/:id
+  # Muestra un consultor específico.
   def show
-    render json: @tramite.as_json(include: [:consultor, :tipo_tramite]), status: :ok
+    render json: @consultor
   end
 
-  #========================
-  # POST /tramites
-  #========================
+  # POST /consultors
+  # Crea un nuevo consultor.
   def create
-    safe_attrs = tramite_params.slice(:monto, :consultor_id, :tipo_tramite_id, :fecha_inicio)
-    tramite = Tramite.new(safe_attrs)
+    @consultor = Consultor.new(consultor_params)
 
-    if tramite.save
-      render json: tramite.as_json(include: [:consultor, :tipo_tramite]), status: :created
+    if @consultor.save
+      render json: @consultor, status: :created
     else
-      render json: { errors: tramite.errors.full_messages }, status: :unprocessable_entity
+      # Devuelve un 422 con los errores de validación.
+      render json: { errors: @consultor.errors.full_messages }, status: :unprocessable_entity
     end
   end
-
-  #========================
-  # PUT/PATCH /tramites/:id
-  # (actualiza atributos básicos, NO estado/historial)
-  #========================
+  
+  # PUT/PATCH /consultors/:id
+  # Actualiza un consultor existente.
   def update
-    safe_attrs = tramite_params.slice(:monto, :consultor_id, :tipo_tramite_id, :fecha_inicio)
-
-    if @tramite.update(safe_attrs)
-      render json: @tramite.as_json(include: [:consultor, :tipo_tramite]), status: :ok
+    if @consultor.update(consultor_params)
+      render json: @consultor
     else
-      render json: { errors: @tramite.errors.full_messages }, status: :unprocessable_entity
+      # Devuelve un 422 con los errores de validación.
+      render json: { errors: @consultor.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
-  #========================
-  # DELETE /tramites/:id
-  #========================
+  # DELETE /consultors/:id
+  # Elimina un consultor.
   def destroy
-    @tramite.destroy
-    head :no_content
-  end
-
-  #========================
-  # PATCH /tramites/:id/update_estado
-  # (cambia estado usando máquina de estados + opcionalmente monto)
-  #========================
-  def update_estado
-    new_state = params[:new_state].to_s.downcase
-    new_monto = params[:monto].present? ? params[:monto].to_f : nil
-
-    no_state_change = new_state.blank? || new_state == @tramite.estado
-    no_monto_change = new_monto.nil? || new_monto.to_f == @tramite.monto.to_f
-
-    if no_state_change && no_monto_change
-      return render json: { message: 'No hay cambios para actualizar.' }, status: :not_modified
-    end
-
-    begin
-      Tramite.transaction do
-        # transición con historial (modelo Tramite#transition_to!)
-        @tramite.transition_to!(new_state, actor: "Usuario Web") unless no_state_change
-        @tramite.update!(monto: new_monto)                      unless no_monto_change
-      end
-
-      message =
-        if !no_state_change && !no_monto_change
-          "Trámite actualizado. Nuevo estado: #{@tramite.estado}. Monto actualizado."
-        elsif !no_state_change
-          "Trámite actualizado. Nuevo estado: #{@tramite.estado}."
-        else
-          "Monto actualizado."
-        end
-
-      render json: @tramite.reload.as_json(include: [:consultor, :tipo_tramite]).merge(message: message), status: :ok
-
-    rescue StandardError => e
-      render json: { error: 'Actualización fallida', details: e.message }, status: :unprocessable_entity
+    # Se ejecuta la eliminación. El modelo ya maneja las dependencias (:destroy o :nullify).
+    if @consultor.destroy
+      # Éxito: código HTTP 204 No Content (no hay cuerpo de respuesta)
+      head :no_content 
+    else
+      # Si falla la eliminación por alguna razón (ej. validación compleja antes de eliminar).
+      render json: { errors: ["No se pudo eliminar el consultor."] }, status: :unprocessable_entity
     end
   end
 
   private
-
-  def set_tramite
-    @tramite = Tramite.find(params[:id])
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Trámite no encontrado' }, status: :not_found
-  end
-
-  # Admite payload { tramite: { ... } } o directo
-  def tramite_params
-    allowed = %i[codigo estado monto consultor_id tipo_tramite_id fecha_inicio]
-    if params.key?(:tramite)
-      params.require(:tramite).permit(*allowed)
-    else
-      params.permit(*allowed, :new_state, :monto)
+    # Método para buscar el recurso por ID (usado por before_action).
+    def set_consultor
+      # Si el registro no se encuentra, Rails lanza ActiveRecord::RecordNotFound,
+      # que por defecto se maneja como un 404 Not Found.
+      @consultor = Consultor.find(params[:id])
     end
-  end
+    
+    # Parámetros fuertes (Strong Parameters)
+    def consultor_params
+      params.require(:consultor).permit(:nombre, :email)
+    end
 end

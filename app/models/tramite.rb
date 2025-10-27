@@ -1,24 +1,13 @@
 # app/models/tramite.rb
 class Tramite < ApplicationRecord
+  # =======================================================
   # Asociaciones
+  # =======================================================
   belongs_to :consultor
   belongs_to :tipo_tramite
+  belongs_to :cliente                     # <-- ¡¡AQUÍ ESTÁ LA LÍNEA!!
   has_many   :historico_estados
-
-  # =======================================================
-  # MÁQUINA DE ESTADOS
-  # =======================================================
-  # Estado actual => [Estados permitidos]
-  VALID_TRANSITIONS = {
-    'ingresado'  => %w[asignado suspendido cancelado],
-    'asignado'   => %w[en_proceso suspendido cancelado],
-    'en_proceso' => %w[terminado suspendido cancelado],
-    'suspendido' => %w[en_proceso cancelado],
-    'terminado'  => [],
-    'cancelado'  => []
-  }.freeze
-
-  VALID_STATES = VALID_TRANSITIONS.keys.freeze
+  belongs_to :version_flujo, optional: true
 
   # =======================================================
   # DEFAULTS Y NORMALIZACIÓN
@@ -29,68 +18,75 @@ class Tramite < ApplicationRecord
   # =======================================================
   # VALIDACIONES
   # =======================================================
-  validates :estado, presence: true, inclusion: { in: VALID_STATES }
+  validates :estado, presence: true
   validates :codigo, presence: true, uniqueness: true
+  validates :cliente_id, presence: true # La base de datos lo requiere
 
   # =======================================================
-  # API de estado
+  # Lógica de Estado y Flujo
   # =======================================================
-  def can_transition_to?(new_state)
-    ns = new_state.to_s.downcase
-    Array(VALID_TRANSITIONS[estado]).include?(ns)
+  def estados_siguientes_posibles
+    return [] unless self.version_flujo && self.estado
+    self.version_flujo.transicion_flujos
+        .where(estado_origen: self.estado)
+        .pluck(:estado_destino)
   end
 
-  # Transiciona y (si es posible) deja registro en historico_estados
-  def transition_to!(new_state, actor: nil, observaciones: nil, at: Time.current)
+  def can_transition_to?(new_state)
     ns = new_state.to_s.downcase
-    raise ArgumentError, "Estado inválido: #{ns}" unless VALID_STATES.include?(ns)
-    raise(StandardError, "Transición no permitida: #{estado} → #{ns}") unless can_transition_to?(ns)
+    estados_siguientes_posibles.include?(ns)
+  end
+
+  def transition_to!(new_state, actor: nil, observaciones: nil, at: Time.current)
+    ns = new_state.to_s.downcase.presence
+    return true if ns.blank? || ns == self.estado
+    raise ArgumentError, "Estado inválido: #{ns}" unless ns.present?
+    raise StandardError, "Transición no permitida: #{estado} → #{ns}" unless can_transition_to?(ns)
 
     from = estado
     transaction do
       update!(estado: ns)
-      log_historial(from:, to: ns, actor:, observaciones:, at:)
+      log_historial(from: from, to: ns, actor: actor, observaciones: observaciones, at: at)
     end
+    true
+  rescue StandardError => e
+    Rails.logger.error "Error en transition_to!: #{e.message}"
+    false
   end
 
   private
 
-  # Pone estado en minúsculas con guiones bajos (por si llega con otro formato)
   def normalize_estado
     self.estado = estado.to_s.downcase.presence
   end
 
-  # Defaults solo al crear: estado y código
   def apply_defaults
-    self.estado ||= 'ingresado'
     self.codigo ||= generate_codigo
   end
 
-  # Genera TR-0001, TR-0002… usando el id máximo + 1 (simple y único)
   def generate_codigo
-    next_id = (Tramite.maximum(:id) || 0) + 1
+    last_id = Tramite.maximum(:id) || 0
+    next_id = last_id + 1
     format('TR-%04d', next_id)
   end
 
-  # Intenta registrar el cambio en historico_estados si la tabla/columns existen
   def log_historial(from:, to:, actor:, observaciones:, at:)
-    return unless association(:historico_estados).klass
-
-    he = historico_estados.build
-    # Set de atributos de forma segura según existan columnas
-    he.estado        = to if he.has_attribute?(:estado)
-    he.estado_nuevo  = to if he.has_attribute?(:estado_nuevo)
-    he.estado_anterior = from if he.has_attribute?(:estado_anterior)
-    he.cambiado_por  = actor if he.has_attribute?(:cambiado_por)
-    he.usuario       = actor if he.has_attribute?(:usuario)
-    he.observaciones = observaciones if he.has_attribute?(:observaciones)
-    he.created_at    = at if he.has_attribute?(:created_at) && he.new_record?
-    he.fecha         = at if he.has_attribute?(:fecha)
-
-    # Si no hay ninguna de esas columnas, no falla: simplemente no guarda
-    he.save if he.changed?
-  rescue StandardError
-    # No interrumpir la transición si el historial fallara
+    return true unless association(:historico_estados).klass
+    begin
+      he = historico_estados.build
+      he.estado        = to if he.respond_to?(:estado=)
+      he.estado_nuevo  = to if he.respond_to?(:estado_nuevo=)
+      he.estado_anterior = from if he.respond_to?(:estado_anterior=)
+      he.cambiado_por  = actor.is_a?(User) ? actor.email : actor.to_s if he.respond_to?(:cambiado_por=)
+      he.usuario       = actor if he.respond_to?(:usuario=)
+      he.observaciones = observaciones if he.respond_to?(:observaciones=)
+      he.created_at    = at if he.respond_to?(:created_at=) && he.new_record?
+      he.fecha         = at if he.respond_to?(:fecha=)
+      he.save if he.changed?
+    rescue StandardError => e
+      Rails.logger.error "Error al guardar historial: #{e.message}"
+    end
     true
   end
+
 end

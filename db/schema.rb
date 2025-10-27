@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_23_210843) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_27_121700) do
   create_table "agenda_consultors", force: :cascade do |t|
     t.datetime "fecha_hora"
     t.integer "consultor_id", null: false
@@ -80,9 +80,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_210843) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "cliente_id", null: false
+    t.integer "version_flujo_id"
     t.index ["cliente_id"], name: "index_tramites_on_cliente_id"
     t.index ["consultor_id"], name: "index_tramites_on_consultor_id"
     t.index ["tipo_tramite_id"], name: "index_tramites_on_tipo_tramite_id"
+    t.index ["version_flujo_id"], name: "index_tramites_on_version_flujo_id"
+  end
+
+  create_table "transicion_flujos", force: :cascade do |t|
+    t.integer "version_flujo_id", null: false
+    t.string "estado_origen"
+    t.string "estado_destino", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["estado_destino"], name: "index_transicion_flujos_on_estado_destino"
+    t.index ["estado_origen"], name: "index_transicion_flujos_on_estado_origen"
+    t.index ["version_flujo_id"], name: "index_transicion_flujos_on_version_flujo_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -95,6 +108,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_210843) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  create_table "version_flujos", force: :cascade do |t|
+    t.integer "tipo_tramite_id", null: false
+    t.integer "numero_version"
+    t.string "nombre_version"
+    t.date "fecha_vigencia"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tipo_tramite_id"], name: "index_version_flujos_on_tipo_tramite_id"
+  end
+
   add_foreign_key "agenda_consultors", "consultors"
   add_foreign_key "clientes", "users"
   add_foreign_key "historico_estados", "estado_tramites"
@@ -102,4 +125,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_210843) do
   add_foreign_key "tramites", "clientes"
   add_foreign_key "tramites", "consultors"
   add_foreign_key "tramites", "tipo_tramites"
+  add_foreign_key "tramites", "version_flujos"
+  add_foreign_key "transicion_flujos", "version_flujos"
+  add_foreign_key "version_flujos", "tipo_tramites"
 end
