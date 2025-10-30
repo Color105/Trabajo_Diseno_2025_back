@@ -7,23 +7,35 @@ class TransicionPosiblesController < ApplicationController
   before_action :set_version_borrador, only: [:create] 
   
   # 'id' de la transición viene de la URL (ruta 'shallow')
-  before_action :set_transicion, only: [:destroy] 
+  before_action :set_transicion, only: [:destroy] # <-- Esta línea es clave
 
   # POST /versiones/:version_id/transiciones
   def create
     @transicion = @version.transicion_posibles.new(transicion_params)
     
+    # --- ¡¡VALIDACIÓN NUEVA!! ---
+    # Si esta es la PRIMERA transición que se añade a esta versión...
+    if @version.transicion_posibles.empty?
+      # ...y el estado de origen NO es el estado inicial...
+      unless @transicion.estado_origen.es_estado_inicial?
+        # ...lanzamos un error.
+        return render json: { errors: ["La primera transición de un circuito debe originarse en el estado 'Ingresado' (o el estado marcado como inicial)."] }, status: :unprocessable_entity
+      end
+    end
+    # --- FIN DE VALIDACIÓN ---
+    
     if @transicion.save
-      # Devuelve la transición creada con sus IDs
       render json: @transicion, status: :created
     else
-      # Devuelve los errores de validación (ej. "ya existe", "no puede ser el mismo")
       render json: { errors: @transicion.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
+  # --- ¡¡LA ACCIÓN QUE TE FALTABA!! ---
   # DELETE /transiciones/:id
   def destroy
+    # @transicion es cargado por el before_action 'set_transicion'
+    
     # Validar que la transición pertenezca a una versión en borrador
     if @transicion.version.estado != 'Borrador'
       return render json: { error: 'No se puede modificar un circuito activo o archivado' }, status: :forbidden
@@ -32,6 +44,7 @@ class TransicionPosiblesController < ApplicationController
     @transicion.destroy
     head :no_content # Respuesta 204 (Sin Contenido), significa éxito
   end
+  # --- FIN DE LA ACCIÓN ---
 
   private
 

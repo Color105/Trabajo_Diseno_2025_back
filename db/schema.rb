@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_30_122214) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_30_183907) do
   create_table "agenda_consultors", force: :cascade do |t|
     t.datetime "fecha_hora"
     t.integer "consultor_id", null: false
@@ -47,6 +47,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_30_122214) do
     t.string "nombreEstadoTramite", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "es_estado_inicial"
     t.index ["codEstadoTramite"], name: "index_estado_tramites_on_codEstadoTramite", unique: true
     t.index ["nombreEstadoTramite"], name: "index_estado_tramites_on_nombreEstadoTramite", unique: true
   end
