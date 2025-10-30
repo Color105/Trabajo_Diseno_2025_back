@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_23_210843) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_30_122214) do
   create_table "agenda_consultors", force: :cascade do |t|
     t.datetime "fecha_hora"
     t.integer "consultor_id", null: false
@@ -72,17 +72,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_210843) do
 
   create_table "tramites", force: :cascade do |t|
     t.string "codigo"
-    t.string "estado"
     t.datetime "fecha_inicio"
     t.decimal "monto"
     t.integer "consultor_id", null: false
-    t.integer "tipo_tramite_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "cliente_id", null: false
+    t.integer "version_id", null: false
+    t.integer "estado_tramite_id"
     t.index ["cliente_id"], name: "index_tramites_on_cliente_id"
     t.index ["consultor_id"], name: "index_tramites_on_consultor_id"
-    t.index ["tipo_tramite_id"], name: "index_tramites_on_tipo_tramite_id"
+    t.index ["estado_tramite_id"], name: "index_tramites_on_estado_tramite_id"
+    t.index ["version_id"], name: "index_tramites_on_version_id"
+  end
+
+  create_table "transicion_posibles", force: :cascade do |t|
+    t.integer "version_id", null: false
+    t.integer "estado_origen_id", null: false
+    t.integer "estado_siguiente_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["estado_origen_id"], name: "index_transicion_posibles_on_estado_origen_id"
+    t.index ["estado_siguiente_id"], name: "index_transicion_posibles_on_estado_siguiente_id"
+    t.index ["version_id", "estado_origen_id", "estado_siguiente_id"], name: "idx_transicion_unica", unique: true
+    t.index ["version_id"], name: "index_transicion_posibles_on_version_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -95,11 +108,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_23_210843) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  create_table "versions", force: :cascade do |t|
+    t.integer "tipo_tramite_id", null: false
+    t.integer "nroVersion"
+    t.datetime "fechaHoraInicioVigencia"
+    t.datetime "fechaHoraFinVigencia"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tipo_tramite_id"], name: "index_versions_on_tipo_tramite_id"
+  end
+
   add_foreign_key "agenda_consultors", "consultors"
   add_foreign_key "clientes", "users"
   add_foreign_key "historico_estados", "estado_tramites"
   add_foreign_key "historico_estados", "tramites"
   add_foreign_key "tramites", "clientes"
   add_foreign_key "tramites", "consultors"
-  add_foreign_key "tramites", "tipo_tramites"
+  add_foreign_key "tramites", "estado_tramites"
+  add_foreign_key "tramites", "versions"
+  add_foreign_key "transicion_posibles", "estado_tramites", column: "estado_origen_id"
+  add_foreign_key "transicion_posibles", "estado_tramites", column: "estado_siguiente_id"
+  add_foreign_key "transicion_posibles", "versions"
+  add_foreign_key "versions", "tipo_tramites"
 end

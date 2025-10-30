@@ -21,10 +21,21 @@ Rails.application.routes.draw do
 
     # ---------- ABMs de soporte ----------
     resources :consultors          # full CRUD
-    resources :tipo_tramites       # full CRUD
+
+    # --- ¡¡AQUÍ ESTÁ EL CAMBIO!! ---
+    # Se expande tipo_tramites para incluir sus versiones y circuitos
+    resources :tipo_tramites do
+      resources :versions, path: 'versiones', shallow: true do
+        resources :transicion_posibles, path: 'transiciones', only: [:create, :destroy]
+        member do
+          post 'clonar'
+          post 'activar'
+        end
+      end
+    end
+    # --- FIN DEL CAMBIO ---
+
     resources :estado_tramites     # full CRUD
-    
-    # --- ¡¡AQUÍ ESTÁ LA LÍNEA QUE FALTA!! ---
     resources :clientes            # full CRUD
 
     # ---------- Agenda consultores ----------

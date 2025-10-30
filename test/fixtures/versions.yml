@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tipo_tramite: one
+  nroVersion: 1
+  fechaHoraInicioVigencia: 2025-10-30 09:11:57
+  fechaHoraFinVigencia: 2025-10-30 09:11:57
+
+two:
+  tipo_tramite: two
+  nroVersion: 1
+  fechaHoraInicioVigencia: 2025-10-30 09:11:57
+  fechaHoraFinVigencia: 2025-10-30 09:11:57
