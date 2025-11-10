@@ -8,7 +8,6 @@ class HistoricoEstado < ApplicationRecord
   belongs_to :estado_tramite # Asumiendo que tu modelo se llama EstadoTramite
 
   # --- VALIDACIONES ---
-  # La fecha debe existir.
   validates :fecha, presence: true
   
   # El estado nuevo también.

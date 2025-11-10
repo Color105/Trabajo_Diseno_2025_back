@@ -8,7 +8,7 @@ class EstadoTramite < ApplicationRecord
   # Usamos :restrict_with_error para evitar borrar un estado si ya está en el historial.
   has_many :historico_estados, dependent: :restrict_with_error 
 
-  # Validaciones (Las que ya tenías y estaban bien)
+  # Validaciones 
   validates :nombreEstadoTramite, presence: true, uniqueness: true, length: { maximum: 100 }
   validates :codEstadoTramite, presence: true, uniqueness: true
   
