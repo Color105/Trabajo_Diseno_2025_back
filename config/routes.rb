@@ -22,9 +22,12 @@ Rails.application.routes.draw do
     # ---------- ABMs de soporte ----------
     resources :consultors          # full CRUD
 
-    # --- ¡¡AQUÍ ESTÁ EL CAMBIO!! ---
-    # Se expande tipo_tramites para incluir sus versiones y circuitos
+    # ---------- TipoTramites + Versiones + Transiciones ----------
     resources :tipo_tramites do
+      # asignar precio a un tipo de trámite
+      # POST /tipo_tramites/:id/asignar_precio
+      post :asignar_precio, on: :member
+
       resources :versions, path: 'versiones', shallow: true do
         resources :transicion_posibles, path: 'transiciones', only: [:create, :destroy]
         member do
@@ -33,7 +36,7 @@ Rails.application.routes.draw do
         end
       end
     end
-    # --- FIN DEL CAMBIO ---
+    # --- FIN BLOQUE tipo_tramites ---
 
     resources :estado_tramites     # full CRUD
     resources :clientes            # full CRUD

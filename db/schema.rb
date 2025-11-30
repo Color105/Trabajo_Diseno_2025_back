@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_10_132451) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_29_154003) do
   create_table "agenda_consultors", force: :cascade do |t|
     t.datetime "fecha_hora"
     t.integer "consultor_id", null: false
@@ -42,6 +42,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_132451) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "detalle_precio_tipo_tramites", force: :cascade do |t|
+    t.integer "lista_precio_id", null: false
+    t.integer "tipo_tramite_id", null: false
+    t.decimal "precio_tipo_tramite", precision: 12, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["lista_precio_id"], name: "index_detalle_precio_tipo_tramites_on_lista_precio_id"
+    t.index ["tipo_tramite_id"], name: "index_detalle_precio_tipo_tramites_on_tipo_tramite_id"
+  end
+
   create_table "estado_tramites", force: :cascade do |t|
     t.string "codEstadoTramite", null: false
     t.string "nombreEstadoTramite", null: false
@@ -63,6 +73,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_132451) do
     t.integer "estado_tramite_id", null: false
     t.index ["estado_tramite_id"], name: "index_historico_estados_on_estado_tramite_id"
     t.index ["tramite_id"], name: "index_historico_estados_on_tramite_id"
+  end
+
+  create_table "lista_precios", force: :cascade do |t|
+    t.integer "cod_lista_precio", null: false
+    t.datetime "fecha_hora_baja_lista_precio"
+    t.datetime "fecha_hora_desde_lista_precio"
+    t.datetime "fecha_hora_hasta_lista_precio"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cod_lista_precio"], name: "index_lista_precios_on_cod_lista_precio", unique: true
   end
 
   create_table "tipo_tramites", force: :cascade do |t|
@@ -122,6 +142,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_10_132451) do
 
   add_foreign_key "agenda_consultors", "consultors"
   add_foreign_key "clientes", "users"
+  add_foreign_key "detalle_precio_tipo_tramites", "lista_precios"
+  add_foreign_key "detalle_precio_tipo_tramites", "tipo_tramites"
   add_foreign_key "historico_estados", "estado_tramites"
   add_foreign_key "historico_estados", "tramites"
   add_foreign_key "tramites", "clientes"

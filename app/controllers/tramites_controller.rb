@@ -3,29 +3,43 @@ class TramitesController < ApplicationController
   wrap_parameters :tramite, include: %i[codigo monto consultor_id tipo_tramite_id fecha_inicio cliente_id], format: [:json] rescue nil
   before_action :set_tramite, only: [:show, :update, :destroy, :update_estado]
 
+  # =========================================================
+  # INDEX
+  # =========================================================
   def index
     tramites = Tramite
-      .includes(:cliente, :consultor, :version, :tipo_tramite, :estado_tramite, version: {transicion_posibles: :estado_siguiente}) # Pre-cargamos todo
+      .includes(:cliente, :consultor, :version, :tipo_tramite, :estado_tramite, version: { transicion_posibles: :estado_siguiente })
       .order(created_at: :desc)
       
-    # --- CAMBIO: Añadido 'methods: ...' ---
     render json: tramites.as_json(
-      include: [:cliente, :consultor, :tipo_tramite, :estado_tramite],
-      methods: [:posibles_siguientes_estados] # <-- ¡AQUÍ!
+      include: {
+        cliente: {},
+        consultor: {},
+        estado_tramite: {},
+        tipo_tramite: { methods: [:precio_actual] } # 👈 acá viene el precio
+      },
+      methods: [:posibles_siguientes_estados]
     ), status: :ok
   end
 
+  # =========================================================
+  # SHOW
+  # =========================================================
   def show
-    # --- CAMBIO: Añadido 'methods: ...' ---
     render json: @tramite.as_json(
-      include: [:cliente, :consultor, :tipo_tramite, :estado_tramite],
-      methods: [:posibles_siguientes_estados] # <-- ¡AQUÍ!
+      include: {
+        cliente: {},
+        consultor: {},
+        estado_tramite: {},
+        tipo_tramite: { methods: [:precio_actual] }
+      },
+      methods: [:posibles_siguientes_estados]
     ), status: :ok
   end
 
-  # =================================================================
-  # MÉTODO CREATE 
-  # =================================================================
+  # =========================================================
+  # CREATE 
+  # =========================================================
   def create
     tipo_tramite = TipoTramite.find_by(id: tramite_params[:tipo_tramite_id])
     return render json: { errors: ["Tipo de Trámite no encontrado"] }, status: :not_found unless tipo_tramite
@@ -42,41 +56,52 @@ class TramitesController < ApplicationController
     tramite.estado_tramite = estado_inicial
     
     if tramite.save
-      # --- CAMBIO: Añadido 'methods: ...' ---
       render json: tramite.as_json(
-        include: [:cliente, :consultor, :tipo_tramite, :estado_tramite],
-        methods: [:posibles_siguientes_estados] # <-- ¡AQUÍ!
+        include: {
+          cliente: {},
+          consultor: {},
+          estado_tramite: {},
+          tipo_tramite: { methods: [:precio_actual] }
+        },
+        methods: [:posibles_siguientes_estados]
       ), status: :created
     else
       render json: { errors: tramite.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
-  # =================================================================
-  # MÉTODO UPDATE 
-  # =================================================================
+  # =========================================================
+  # UPDATE 
+  # =========================================================
   def update
     safe_attrs = tramite_params.except(:tipo_tramite_id)
     
     if @tramite.update(safe_attrs)
-      # --- CAMBIO: Añadido 'methods: ...' ---
       render json: @tramite.as_json(
-        include: [:cliente, :consultor, :tipo_tramite, :estado_tramite],
-        methods: [:posibles_siguientes_estados] # <-- ¡AQUÍ!
+        include: {
+          cliente: {},
+          consultor: {},
+          estado_tramite: {},
+          tipo_tramite: { methods: [:precio_actual] }
+        },
+        methods: [:posibles_siguientes_estados]
       ), status: :ok
     else
       render json: { errors: @tramite.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
+  # =========================================================
+  # DESTROY
+  # =========================================================
   def destroy
     @tramite.destroy
     head :no_content
   end
 
-  # =================================================================
-  # MÉTODO UPDATE_ESTADO 
-  # =================================================================
+  # =========================================================
+  # UPDATE_ESTADO 
+  # =========================================================
   def update_estado
     new_state_name = params[:new_state].to_s.downcase
     new_monto = params[:monto].present? ? params[:monto].to_f : nil
@@ -104,10 +129,15 @@ class TramitesController < ApplicationController
         @tramite.transition_to!(new_state_obj, actor: "Usuario Web") unless no_state_change
         @tramite.update!(monto: new_monto) unless no_monto_change
       end
-      # --- CAMBIO: Añadido 'methods: ...' (en reload) ---
+
       render json: @tramite.reload.as_json(
-        include: [:cliente, :consultor, :tipo_tramite, :estado_tramite],
-        methods: [:posibles_siguientes_estados] # <-- ¡AQUÍ!
+        include: {
+          cliente: {},
+          consultor: {},
+          estado_tramite: {},
+          tipo_tramite: { methods: [:precio_actual] }
+        },
+        methods: [:posibles_siguientes_estados]
       ).merge(message: "Actualizado correctamente"), status: :ok
     rescue StandardError => e
       render json: { error: e.message }, status: :unprocessable_entity
@@ -117,10 +147,9 @@ class TramitesController < ApplicationController
   private
 
   def set_tramite
-    # Pre-cargamos todo lo necesario para el método 'posibles_siguientes_estados'
     @tramite = Tramite.includes(
       :cliente, :consultor, :tipo_tramite, :estado_tramite,
-      version: {transicion_posibles: :estado_siguiente}
+      version: { transicion_posibles: :estado_siguiente }
     ).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Trámite no encontrado' }, status: :not_found

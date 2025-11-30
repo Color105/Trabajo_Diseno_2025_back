@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  lista_precio: one
+  tipo_tramite: one
+  precio_tipo_tramite: 9.99
+
+two:
+  lista_precio: two
+  tipo_tramite: two
+  precio_tipo_tramite: 9.99
