@@ -11,12 +11,33 @@ class Tramite < ApplicationRecord
   has_one  :tipo_tramite, through: :version
   has_many :historico_estados
 
-  # 👇 NUEVO: relación correcta con TramiteDocumentacion
+  # Relación con TramiteDocumentacion
   has_many :tramite_documentaciones,
            class_name: 'TramiteDocumentacion',
            foreign_key: 'tramite_id',
            inverse_of: :tramite,
            dependent: :destroy
+
+  # =======================================================
+  # BAJA LÓGICA
+  #   campo: fecha_hora_baja_tramite:datetime
+  # =======================================================
+
+  # Trámites que siguen activos (sin baja lógica)
+  scope :activos,    -> { where(fecha_hora_baja_tramite: nil) }
+
+  # Trámites dados de baja (con fecha de baja)
+  scope :eliminados, -> { where.not(fecha_hora_baja_tramite: nil) }
+
+  # ¿Está dado de baja este trámite?
+  def dado_de_baja?
+    fecha_hora_baja_tramite.present?
+  end
+
+  # Marca el trámite como dado de baja (sin destruir el registro)
+  def dar_de_baja!(at = Time.current)
+    update!(fecha_hora_baja_tramite: at)
+  end
 
   # =======================================================
   # DEFAULTS Y VALIDACIONES

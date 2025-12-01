@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_30_232741) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_01_044208) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -148,6 +148,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_30_232741) do
     t.integer "cliente_id", null: false
     t.integer "version_id", null: false
     t.integer "estado_tramite_id"
+    t.datetime "fecha_hora_baja_tramite"
     t.index ["cliente_id"], name: "index_tramites_on_cliente_id"
     t.index ["consultor_id"], name: "index_tramites_on_consultor_id"
     t.index ["estado_tramite_id"], name: "index_tramites_on_estado_tramite_id"

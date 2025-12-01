@@ -1,106 +1,94 @@
 # app/controllers/tramites_controller.rb
 class TramitesController < ApplicationController
-  wrap_parameters :tramite, include: %i[codigo monto consultor_id tipo_tramite_id fecha_inicio cliente_id], format: [:json] rescue nil
+  wrap_parameters :tramite,
+                  include: %i[codigo monto consultor_id tipo_tramite_id fecha_inicio cliente_id],
+                  format: [:json] rescue nil
+
   before_action :set_tramite, only: [:show, :update, :destroy, :update_estado]
 
   # =========================================================
   # INDEX
   # =========================================================
+  # GET /tramites
+  # Parámetro opcional:
+  #   ?filtro=activos     -> solo activos (default)
+  #   ?filtro=eliminados  -> solo dados de baja
+  #   ?filtro=todos       -> todos
   def index
-    tramites = Tramite
-      .includes(:cliente, :consultor, :version, :tipo_tramite, :estado_tramite, version: { transicion_posibles: :estado_siguiente })
+    base_scope = Tramite
+      .includes(:cliente, :consultor, :version, :tipo_tramite, :estado_tramite,
+                version: { transicion_posibles: :estado_siguiente })
       .order(created_at: :desc)
-      
-    render json: tramites.as_json(
-      include: {
-        cliente: {},
-        consultor: {},
-        estado_tramite: {},
-        tipo_tramite: { methods: [:precio_actual] } # 👈 acá viene el precio
-      },
-      methods: [:posibles_siguientes_estados]
-    ), status: :ok
+
+    tramites =
+      case params[:filtro].to_s
+      when 'eliminados'
+        base_scope.eliminados
+      when 'todos'
+        base_scope
+      else
+        base_scope.activos
+      end
+
+    render json: tramites.as_json(serialization_options), status: :ok
   end
 
   # =========================================================
   # SHOW
   # =========================================================
   def show
-    render json: @tramite.as_json(
-      include: {
-        cliente: {},
-        consultor: {},
-        estado_tramite: {},
-        tipo_tramite: { methods: [:precio_actual] }
-      },
-      methods: [:posibles_siguientes_estados]
-    ), status: :ok
+    render json: @tramite.as_json(serialization_options), status: :ok
   end
 
   # =========================================================
-  # CREATE 
+  # CREATE
   # =========================================================
   def create
     tipo_tramite = TipoTramite.find_by(id: tramite_params[:tipo_tramite_id])
     return render json: { errors: ["Tipo de Trámite no encontrado"] }, status: :not_found unless tipo_tramite
-    
+
     version_activa = tipo_tramite.version_activa
     return render json: { errors: ["No hay versión activa para este tipo de trámite"] }, status: :unprocessable_entity unless version_activa
-    
+
     estado_inicial = EstadoTramite.find_by(nombreEstadoTramite: 'Ingresado')
     return render json: { errors: ["Estado inicial 'Ingresado' no configurado"] }, status: :internal_server_error unless estado_inicial
-    
+
     safe_attrs = tramite_params.except(:tipo_tramite_id)
     tramite = Tramite.new(safe_attrs)
     tramite.version = version_activa
     tramite.estado_tramite = estado_inicial
-    
+
     if tramite.save
-      render json: tramite.as_json(
-        include: {
-          cliente: {},
-          consultor: {},
-          estado_tramite: {},
-          tipo_tramite: { methods: [:precio_actual] }
-        },
-        methods: [:posibles_siguientes_estados]
-      ), status: :created
+      render json: tramite.as_json(serialization_options), status: :created
     else
       render json: { errors: tramite.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
   # =========================================================
-  # UPDATE 
+  # UPDATE
   # =========================================================
   def update
     safe_attrs = tramite_params.except(:tipo_tramite_id)
-    
+
     if @tramite.update(safe_attrs)
-      render json: @tramite.as_json(
-        include: {
-          cliente: {},
-          consultor: {},
-          estado_tramite: {},
-          tipo_tramite: { methods: [:precio_actual] }
-        },
-        methods: [:posibles_siguientes_estados]
-      ), status: :ok
+      render json: @tramite.as_json(serialization_options), status: :ok
     else
       render json: { errors: @tramite.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
   # =========================================================
-  # DESTROY
+  # DESTROY  (BAJA LÓGICA)
   # =========================================================
   def destroy
-    @tramite.destroy
+    # 👇 En vez de borrar el registro, marcamos fecha de baja
+    @tramite.dar_de_baja!
     head :no_content
   end
 
   # =========================================================
-  # UPDATE_ESTADO 
+  # UPDATE_ESTADO
   # =========================================================
   def update_estado
     new_state_name = params[:new_state].to_s.downcase
@@ -130,15 +118,8 @@ class TramitesController < ApplicationController
         @tramite.update!(monto: new_monto) unless no_monto_change
       end
 
-      render json: @tramite.reload.as_json(
-        include: {
-          cliente: {},
-          consultor: {},
-          estado_tramite: {},
-          tipo_tramite: { methods: [:precio_actual] }
-        },
-        methods: [:posibles_siguientes_estados]
-      ).merge(message: "Actualizado correctamente"), status: :ok
+      render json: @tramite.reload.as_json(serialization_options).merge(message: "Actualizado correctamente"),
+             status: :ok
     rescue StandardError => e
       render json: { error: e.message }, status: :unprocessable_entity
     end
@@ -153,6 +134,20 @@ class TramitesController < ApplicationController
     ).find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Trámite no encontrado' }, status: :not_found
+  end
+
+  # Opciones de serialización para NO repetir código
+  def serialization_options
+    {
+      include: {
+        cliente: {},
+        consultor: {},
+        estado_tramite: {},
+        tipo_tramite: { methods: [:precio_actual] }
+      },
+      # 👇 además del flujo, mandamos si está dado de baja
+      methods: [:posibles_siguientes_estados, :dado_de_baja?]
+    }
   end
 
   def tramite_params
