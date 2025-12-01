@@ -10,7 +10,35 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_29_154003) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_30_232741) do
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
   create_table "agenda_consultors", force: :cascade do |t|
     t.datetime "fecha_hora"
     t.integer "consultor_id", null: false
@@ -52,6 +80,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_154003) do
     t.index ["tipo_tramite_id"], name: "index_detalle_precio_tipo_tramites_on_tipo_tramite_id"
   end
 
+  create_table "documentacions", force: :cascade do |t|
+    t.integer "cod_documentacion"
+    t.string "nombre_documentacion"
+    t.datetime "fecha_hora_baja_documentacion"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "estado_tramites", force: :cascade do |t|
     t.string "codEstadoTramite", null: false
     t.string "nombreEstadoTramite", null: false
@@ -90,6 +126,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_154003) do
     t.integer "plazo_documentacion"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "tramite_documentacions", force: :cascade do |t|
+    t.datetime "fecha_hora_entrega"
+    t.integer "tramite_id", null: false
+    t.integer "documentacion_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["documentacion_id"], name: "index_tramite_documentacions_on_documentacion_id"
+    t.index ["tramite_id"], name: "index_tramite_documentacions_on_tramite_id"
   end
 
   create_table "tramites", force: :cascade do |t|
@@ -140,12 +186,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_29_154003) do
     t.index ["tipo_tramite_id"], name: "index_versions_on_tipo_tramite_id"
   end
 
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agenda_consultors", "consultors"
   add_foreign_key "clientes", "users"
   add_foreign_key "detalle_precio_tipo_tramites", "lista_precios"
   add_foreign_key "detalle_precio_tipo_tramites", "tipo_tramites"
   add_foreign_key "historico_estados", "estado_tramites"
   add_foreign_key "historico_estados", "tramites"
+  add_foreign_key "tramite_documentacions", "documentacions"
+  add_foreign_key "tramite_documentacions", "tramites"
   add_foreign_key "tramites", "clientes"
   add_foreign_key "tramites", "consultors"
   add_foreign_key "tramites", "estado_tramites"

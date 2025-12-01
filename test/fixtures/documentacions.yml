@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  cod_documentacion: 1
+  nombre_documentacion: MyString
+  fecha_hora_baja_documentacion: 2025-11-30 19:09:26
+
+two:
+  cod_documentacion: 1
+  nombre_documentacion: MyString
+  fecha_hora_baja_documentacion: 2025-11-30 19:09:26

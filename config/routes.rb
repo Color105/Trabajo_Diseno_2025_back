@@ -14,6 +14,12 @@ Rails.application.routes.draw do
 
       # Histórico anidado por trámite: /tramites/:tramite_id/historico_estados
       resources :historico_estados, only: :index
+
+      # 👇 NUEVO: documentos asociados al trámite
+      resources :tramite_documentaciones,
+                controller: :tramite_documentacion, # usa TramiteDocumentacionController
+                path: "documentos",
+                only: [:index, :create, :destroy]
     end
 
     # Auditoría global (opcional): /historico_estados
@@ -21,6 +27,9 @@ Rails.application.routes.draw do
 
     # ---------- ABMs de soporte ----------
     resources :consultors          # full CRUD
+    resources :documentaciones     # 👈 NUEVO: tipos de documentación
+    resources :estado_tramites     # full CRUD
+    resources :clientes            # full CRUD
 
     # ---------- TipoTramites + Versiones + Transiciones ----------
     resources :tipo_tramites do
@@ -37,9 +46,6 @@ Rails.application.routes.draw do
       end
     end
     # --- FIN BLOQUE tipo_tramites ---
-
-    resources :estado_tramites     # full CRUD
-    resources :clientes            # full CRUD
 
     # ---------- Agenda consultores ----------
     resources :agenda_consultors, only: [:index, :show, :create]
