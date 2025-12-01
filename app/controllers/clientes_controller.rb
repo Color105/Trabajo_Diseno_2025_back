@@ -37,8 +37,18 @@ class ClientesController < ApplicationController
   end
 
   # DELETE /clientes/:id
+  #
+  # Solo permite eliminar el cliente si NO tiene trámites activos
+  # en estados no finales. Es decir, si tiene trámites cuyo estado
+  # NO sea Terminado / Suspendido / Cancelado, se bloquea la eliminación.
+  #
   def destroy
-    if @cliente.destroy
+    if @cliente.tiene_tramites_activos_no_finales?
+      render json: {
+        error: 'No se puede eliminar el cliente porque tiene trámites activos que aún no están finalizados. ' \
+               'Solo se permite eliminar clientes cuyos trámites estén en estado Terminado, Suspendido o Cancelado.'
+      }, status: :unprocessable_entity
+    elsif @cliente.destroy
       head :no_content
     else
       render json: { errors: @cliente.errors.full_messages }, status: :unprocessable_entity
