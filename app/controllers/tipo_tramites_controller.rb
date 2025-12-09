@@ -1,4 +1,3 @@
-# app/controllers/tipo_tramites_controller.rb
 class TipoTramitesController < ApplicationController
   # Busca el tipo de trámite antes de estas acciones
   before_action :set_tipo_tramite, only: [:show, :update, :destroy, :asignar_precio]

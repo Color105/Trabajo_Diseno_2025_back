@@ -9,11 +9,6 @@ class TramitesController < ApplicationController
   # =========================================================
   # INDEX
   # =========================================================
-  # GET /tramites
-  # Parámetro opcional:
-  #   ?filtro=activos     -> solo activos (default)
-  #   ?filtro=eliminados  -> solo dados de baja
-  #   ?filtro=todos       -> todos
   def index
     base_scope = Tramite
       .includes(:cliente, :consultor, :version, :tipo_tramite, :estado_tramite,
@@ -53,10 +48,22 @@ class TramitesController < ApplicationController
     estado_inicial = EstadoTramite.find_by(nombreEstadoTramite: 'Ingresado')
     return render json: { errors: ["Estado inicial 'Ingresado' no configurado"] }, status: :internal_server_error unless estado_inicial
 
-    safe_attrs = tramite_params.except(:tipo_tramite_id)
+    # 👉 calculamos el precio vigente HOY para este tipo, según la lista de precios
+    precio_vigente = tipo_tramite.precio_para(Date.current)
+
+    if precio_vigente.nil?
+      return render json: {
+        errors: ["No hay precio vigente para este tipo de trámite en la lista de precios actual"]
+      }, status: :unprocessable_entity
+    end
+
+    # ignoramos cualquier :monto que venga del front; el servidor manda
+    safe_attrs = tramite_params.except(:tipo_tramite_id, :monto)
+
     tramite = Tramite.new(safe_attrs)
-    tramite.version = version_activa
+    tramite.version        = version_activa
     tramite.estado_tramite = estado_inicial
+    tramite.monto          = precio_vigente   # 👈 queda grabado para siempre
 
     if tramite.save
       render json: tramite.as_json(serialization_options), status: :created
@@ -82,7 +89,6 @@ class TramitesController < ApplicationController
   # DESTROY  (BAJA LÓGICA)
   # =========================================================
   def destroy
-    # 👇 En vez de borrar el registro, marcamos fecha de baja
     @tramite.dar_de_baja!
     head :no_content
   end
@@ -136,16 +142,15 @@ class TramitesController < ApplicationController
     render json: { error: 'Trámite no encontrado' }, status: :not_found
   end
 
-  # Opciones de serialización para NO repetir código
   def serialization_options
     {
       include: {
         cliente: {},
         consultor: {},
         estado_tramite: {},
+        # 👇 tipo_tramite manda precio_actual al front
         tipo_tramite: { methods: [:precio_actual] }
       },
-      # 👇 además del flujo, mandamos si está dado de baja
       methods: [:posibles_siguientes_estados, :dado_de_baja?]
     }
   end

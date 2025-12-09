@@ -1,23 +1,23 @@
 # config/routes.rb
 Rails.application.routes.draw do
-  # Responder JSON por defecto (útil si es API-only)
+  # Responder JSON por defecto (API)
   scope defaults: { format: :json } do
     # ---------- Auth ----------
     post "/auth/login",    to: "auth#login"
     post "/auth/register", to: "auth#register"
     get  "/auth/me",       to: "auth#me"
 
-    # ---------- Recurso principal: Tramites ----------
+    # ---------- Tramites ----------
     resources :tramites do
-      # Acción custom para transición de estado + opcional monto
+      # transición de estado + opcional monto
       patch :update_estado, on: :member
 
-      # Histórico anidado por trámite: /tramites/:tramite_id/historico_estados
+      # histórico anidado por trámite: /tramites/:tramite_id/historico_estados
       resources :historico_estados, only: :index
 
-      # 👇 NUEVO: documentos asociados al trámite
+      # documentos asociados al trámite
       resources :tramite_documentaciones,
-                controller: :tramite_documentacion, # usa TramiteDocumentacionController
+                controller: :tramite_documentacion,
                 path: "documentos",
                 only: [:index, :create, :destroy]
     end
@@ -27,25 +27,35 @@ Rails.application.routes.draw do
 
     # ---------- ABMs de soporte ----------
     resources :consultors          # full CRUD
-    resources :documentaciones     # 👈 NUEVO: tipos de documentación
+    resources :documentaciones     # tipos de documentación
     resources :estado_tramites     # full CRUD
     resources :clientes            # full CRUD
 
     # ---------- TipoTramites + Versiones + Transiciones ----------
     resources :tipo_tramites do
-      # asignar precio a un tipo de trámite
-      # POST /tipo_tramites/:id/asignar_precio
+      # (opcional) asignar precio simple directo al tipo (ruta vieja, si aún la usás)
       post :asignar_precio, on: :member
 
-      resources :versions, path: 'versiones', shallow: true do
-        resources :transicion_posibles, path: 'transiciones', only: [:create, :destroy]
+      resources :versions, path: "versiones", shallow: true do
+        resources :transicion_posibles,
+                  path: "transiciones",
+                  only: [:create, :destroy]
+
         member do
-          post 'clonar'
-          post 'activar'
+          post "clonar"
+          post "activar"
         end
       end
     end
-    # --- FIN BLOQUE tipo_tramites ---
+
+    # ---------- Listas de Precios ----------
+    resources :lista_precios do
+      member do
+        patch :baja          # baja lógica de la lista
+        get   :detalles      # devuelve los DetallePrecioTipoTramite de esa lista
+        post  :asignar_precio # asignar/actualizar precio para un tipo_tramite en esa lista
+      end
+    end
 
     # ---------- Agenda consultores ----------
     resources :agenda_consultors, only: [:index, :show, :create]
