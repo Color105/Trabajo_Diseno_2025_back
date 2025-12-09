@@ -37,13 +37,13 @@ class ListaPrecio < ApplicationRecord
   end
 
   # =========================
-  # Estado: :activa, :futura, :vencida
+  # Estado: "activa", "futura", "vencida", "eliminada"
   # =========================
   def estado_en(fecha = Date.current)
     f = fecha.to_date
 
-    # Si tiene baja, se considera vencida
-    return "vencida" if fecha_baja && fecha_baja <= f
+    # 👉 Si tiene baja manual, siempre es ELIMINADA
+    return "eliminada" if fecha_baja.present?
 
     if fecha_desde && f < fecha_desde
       "futura"
@@ -68,6 +68,10 @@ class ListaPrecio < ApplicationRecord
 
   def vencida?(fecha = Date.current)
     estado_en(fecha) == "vencida"
+  end
+
+  def eliminada?(fecha = Date.current)
+    estado_en(fecha) == "eliminada"
   end
 
   # Compatibilidad con lo que ya usabas:
@@ -127,8 +131,7 @@ class ListaPrecio < ApplicationRecord
   # Opción B: encadenar listas
   # =========================
   # Si esta lista tiene fecha_desde, buscamos la lista inmediatamente anterior
-  # (activa o futura) y le ajustamos la fecha_hasta = fecha_desde - 1 día.
-  # Así NO hay huecos y solo hay una vigente por día.
+  # (activa o futura, sin baja) y le ajustamos la fecha_hasta = fecha_desde - 1 día.
   def ajustar_lista_anterior_si_corresponde
     return if fecha_desde.blank?
 
@@ -185,9 +188,7 @@ class ListaPrecio < ApplicationRecord
     errors.add(:base, 'No tiene sentido crear una lista totalmente vencida (ambas fechas en el pasado)')
   end
 
-  # 3) No solaparse con otras listas "vivas" (sin baja)
-  #    OJO: igual usamos ajustar_lista_anterior_si_corresponde para encadenar,
-  #    esto es por si alguien mete fechas raras.
+  # 3) No solaparse con otras listas "vivas" (sin baja manual)
   def no_solaparse_con_otras
     d = fecha_desde
     h = fecha_hasta

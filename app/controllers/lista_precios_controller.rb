@@ -67,8 +67,15 @@ class ListaPreciosController < ApplicationController
   # ========================================
   # PUT/PATCH /lista_precios/:id
   # Actualiza fechas de la lista
+  # - No permite editar listas ELIMINADAS
   # ========================================
   def update
+    if @lista_precio.eliminada?
+      return render json: {
+        errors: ['No se puede modificar una lista de precios eliminada.']
+      }, status: :unprocessable_entity
+    end
+
     @lista_precio.assign_attributes(lista_precio_params)
 
     if @lista_precio.save
@@ -83,8 +90,15 @@ class ListaPreciosController < ApplicationController
   # PATCH /lista_precios/:id/baja
   # Baja lógica de la lista
   # - No deja dar de baja la única lista activa
+  # - No permite dar de baja una lista ya eliminada
   # ========================================
   def baja
+    if @lista_precio.eliminada?
+      return render json: {
+        errors: ['La lista de precios ya está eliminada.']
+      }, status: :unprocessable_entity
+    end
+
     # Si esta es activa, me aseguro de que haya otra activa
     if @lista_precio.activa?
       otras_activas = ListaPrecio
@@ -105,6 +119,7 @@ class ListaPreciosController < ApplicationController
   # ========================================
   # GET /lista_precios/:id/detalles
   # Devuelve los DetallePrecioTipoTramite de la lista
+  # (permitimos verlo incluso si está vencida o eliminada, es histórico)
   # ========================================
   def detalles
     detalles = @lista_precio.detalle_precio_tipo_tramites.includes(:tipo_tramite)
@@ -121,6 +136,7 @@ class ListaPreciosController < ApplicationController
 
   # ========================================
   # POST /lista_precios/:id/asignar_precio
+  # - No permite asignar precio si la lista está ELIMINADA
   #
   # Body:
   # {
@@ -129,6 +145,12 @@ class ListaPreciosController < ApplicationController
   # }
   # ========================================
   def asignar_precio
+    if @lista_precio.eliminada?
+      return render json: {
+        errors: ['No se pueden asignar precios a una lista de precios eliminada.']
+      }, status: :unprocessable_entity
+    end
+
     tipo_id = params[:tipo_tramite_id] ||
               params.dig(:detalle_precio_tipo_tramite, :tipo_tramite_id)
     precio  = params[:precio_tipo_tramite] ||
@@ -177,8 +199,8 @@ class ListaPreciosController < ApplicationController
   #
   # Regla:
   # - Si la nueva lista es FUTURA, recortamos la "anterior"
-  #   (activa o futura) para que su fecha_hasta sea el día
-  #   anterior a la fecha_desde de la nueva.
+  #   (activa o futura, sin baja) para que su fecha_hasta
+  #   sea el día anterior a la fecha_desde de la nueva.
   # -------------------------------------------------
   def ajustar_listas_por_nueva_o_editada(lista)
     desde = lista.fecha_desde
