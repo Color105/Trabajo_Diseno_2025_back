@@ -12,5 +12,5 @@ class HistoricoEstado < ApplicationRecord
   
   # El estado nuevo también.
   # (Asumimos que la columna se llama 'estado' como en tu log_historial)
-  validates :estado, presence: true
+  validates :estado, presence: true|
 end
